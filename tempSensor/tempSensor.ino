@@ -1,31 +1,54 @@
-#include <SPI.h>
-#include <nRF24L01.h>
+//#include <SPI.h>
+//#include <nRF24L01.h>
 #include <RF24.h>
+
+/*
+ * For ATTinty84, use board from Spence Konde, with Counterclockwise pins
+ * Use Android as ISP (did not have to pick Tiny version)
+ * 8 MHz.
+ * 
+ * Looks like the pinout is counter clockwise:
+ * Vcc   Gnd
+ * 0      10
+ * 1       9
+ * -       8
+ * 2 .     7
+ * 3       6
+ * 4 .     5
+ */
 
 // TEMPERATURE SENSOR
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-#define ONE_WIRE_BUS 2
+// ARDUINO is 2
+// ATTINY84 is 9
+#define ONE_WIRE_BUS 9
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 // SENSOR CONFIG
-#define SENSOR_ID 100
+#define SENSOR_ID 102
 #define SENSOR_TYPE 1
 
+// #define DEBUG
+
 // RADIO
-#define CE_PIN   9
-#define CSN_PIN 8
+// ARDUINO is 9 and 8
+// ATTINY84 is 8 and 7
+#define CE_PIN  8
+#define CSN_PIN 7
 
 RF24 radio(CE_PIN,CSN_PIN);
 
 byte gateway[5] = "ABCDE";
 
 void setup() {
+#ifdef DEBUG
   Serial.begin(115200);
   Serial.println("Starting");
+#endif
 
   sensors.begin();
 
@@ -54,17 +77,21 @@ void prepareMessage(float temp) {
 
 void sendMessage() {
   bool result = radio.write(&message, sizeof(message));
+#ifdef DEBUG
   Serial.print("Sent... ");
   if (result) {
     Serial.println("fail");
   } else {
     Serial.println("success");
   }
+#endif
 }
 
 float getTemperature() {
   sensors.requestTemperatures();
   float temp = sensors.getTempCByIndex(0);
+#ifdef DEBUG
   Serial.print(temp);
+#endif
   return temp;
 }
