@@ -15,7 +15,8 @@ Each package from a node is sent to the serial in the following format:
 
     Data 100, 1, 255, 8, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
-Each line is prepended with `Data`, followed with 32 byte values. The first three bytes are: Sensor ID, Sensor Type, and voltage.
+Each line is prepended with `Data`, followed with 32 comma separated byte values. The first three bytes are: Sensor ID, Sensor Type, and voltage. The rest depends on the sensor type.
+
 Voltage is a value between 0-254. 255 is used to signify no battery.
 
 ### Sending data to nodes
