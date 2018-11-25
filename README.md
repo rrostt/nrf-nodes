@@ -28,6 +28,10 @@ Currently there is no way to reset the connection, but should be added.
 
 This is the arduino code for a temperature sensor. Update SENSOR_ID when making new sensors.
 
-# receiver
+## doorSensor
+
+This is arduino code for a door sensor. It is mostly written to run on ATTiny and optimized for power consumption.
+
+## receiver
 
 Generic code for a sensor that can receive data from a gateway.
