@@ -4,7 +4,28 @@
 
 #include <printf.h>
 
-#define CE_PIN   9
+// TEMPERATURE SENSOR
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+// ARDUINO is 2
+// ATTINY84 is 9
+#ifdef ATTINY_CORE
+#define ONE_WIRE_BUS 9
+#else
+#define ONE_WIRE_BUS 2
+#endif
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+// SENSOR CONFIG (for temp sensor)
+#define SENSOR_ID 100
+#define SENSOR_TYPE 1
+
+// RADIO
+
+#define CE_PIN  9
 #define CSN_PIN 8
 
 RF24 radio(CE_PIN,CSN_PIN);
@@ -12,10 +33,15 @@ RF24 radio(CE_PIN,CSN_PIN);
 byte address[5] = "ABCDE";
 byte sendToAddress[5] = "EDCBA";
 
+bool hasTemp;
+
 void setup() {
   Serial.begin(115200);
   printf_begin();
   Serial.println("Start receiving");
+
+  sensors.begin();
+  hasTemp = sensors.getDS18Count() > 0;
 
   radio.begin();
   radio.setDataRate( RF24_250KBPS );
@@ -30,16 +56,18 @@ uint8_t message[32];
 char output[200];
 char incoming[37];
 int incomingPosition = 0;
+unsigned long lastMillis = 0;
 
 void loop() {
   if (radio.available()) {
     radio.read(&message, sizeof(message));
     radio.flush_tx();
     radio.stopListening();
-    Serial.print("Data ");
-    formOutput();
-    Serial.println(output);
+    outputMessage();
     radio.startListening();
+  }
+  if (hasTemp) {
+    handleTemperature();
   }
   if (Serial.available() > 0) {
     handleIncoming();
@@ -53,6 +81,12 @@ void formOutput() {
     sprintf(output + strlen(output), "%d, ", message[i]);
   }
   sprintf(output + strlen(output), "%d", message[31]);
+}
+
+void outputMessage() {
+  Serial.print("Data ");
+  formOutput();
+  Serial.println(output);
 }
 
 void handleIncoming() {
@@ -75,4 +109,38 @@ void handleIncoming() {
 
     incomingPosition = 0;
   }
+}
+
+void handleTemperature() {
+  unsigned long nowMillis = millis();
+  if (nowMillis < lastMillis || nowMillis - lastMillis >= 60000) {
+    lastMillis = nowMillis;
+    readAndSendTemperature();
+  }
+}
+
+void readAndSendTemperature() {
+  float temp = getTemperature();
+  Serial.print("Temp: ");
+  Serial.print(temp);
+  Serial.println();
+  prepareMessage(temp*100);
+  outputMessage();
+}
+
+void prepareMessage(float temp) {
+  message[0] = SENSOR_ID;
+  message[1] = SENSOR_TYPE; // temperature
+  message[2] = 255; // battery % or 255 for unavailable
+  message[3] = ((uint16_t)temp) >> 8;
+  message[4] = ((uint16_t)temp) & 0xff;
+}
+
+float getTemperature() {
+  sensors.requestTemperatures();
+  float temp = sensors.getTempCByIndex(0);
+#ifdef DEBUG
+  Serial.print(temp);
+#endif
+  return temp;
 }

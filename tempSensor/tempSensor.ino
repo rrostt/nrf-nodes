@@ -31,7 +31,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 // SENSOR CONFIG
-#define SENSOR_ID 100
+#define SENSOR_ID 103
 #define SENSOR_TYPE 1
 
 // #define DEBUG
